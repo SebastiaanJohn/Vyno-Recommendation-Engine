@@ -25,5 +25,5 @@ Project Organization
     │
     ├── scripts            <- Scripts used in this project
     │
-    ├── main.y             <- Run the model  
+    ├── main.py             <- Run the model  
 

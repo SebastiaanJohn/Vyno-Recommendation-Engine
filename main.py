@@ -141,8 +141,6 @@ def main(args):
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    wine_descriptions.to_csv('test3.csv')
-
     print('Based on your preference we recommend these wines:')
     for idx, wine in enumerate(wine_descriptions['wine_name']):
         print(f'{idx + 1}: {wine} \n')
