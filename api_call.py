@@ -4,27 +4,23 @@ __author__ = "Team Baard"
 __version__ = "0.1.0"
 __license__ = "MIT"
 
-import argparse
-import os
-import requests
-import shutil
-import pickle
-import string
-import itertools
-
-import pandas as pd
-import numpy as np
-
-from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases, Phraser
-
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import SnowballStemmer
-from nltk.corpus import stopwords
-
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import pairwise_distances_argmin_min
+from sklearn.cluster import KMeans
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from nltk.tokenize import word_tokenize, sent_tokenize
+from gensim.models.phrases import Phrases, Phraser
+from gensim.models import Word2Vec
+import numpy as np
+import pandas as pd
+from random import shuffle
+import itertools
+import string
+import pickle
+import argparse
+
+np.random.seed(42)
 
 
 def load_tf_idf_weights(pkl='models/vectorizer.pickle'):
@@ -84,8 +80,10 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
     return sum(wine_vector) / len(wine_vector)
 
 df = pd.read_csv(
-            'data/processed/wine_dataset_all.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
+    'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
+
 wine_descriptions = df.sample(12)
+
 
 app = Flask(__name__)
 
@@ -95,7 +93,13 @@ def get_descriptors():
     data = request.get_json()
     # descriptions = data['descriptions']
     # print(descriptions)
-    embeddings = Word2Vec.load('models/wine_word2vec_model.bin')
+
+    # TEST CODE END
+
+    wine_descriptions.to_csv('josephbarneswines_test.csv')
+
+    # load models
+    embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
     ngrams = load_ngrams()
     descriptor_map = load_descriptor_map()
@@ -108,22 +112,37 @@ def get_descriptors():
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
+    print('All descriptors:', descriptor_list, '\n')
 
+    # remove descriptors that are not easy to understand
+    easy_descriptors = pd.read_csv(
+        'models/user_descriptors.csv')['descriptors'].tolist()
+    easy_descriptors_list = []
+    for descriptor in descriptor_list:
+        if descriptor in easy_descriptors:
+            easy_descriptors_list.append(descriptor)
+
+    print('All user descriptors:', easy_descriptors_list, '\n')
+
+    # get embeddings from descriptors
     descriptor_vectors = []
-    for term in set(descriptor_list):
+    for term in set(easy_descriptors_list):
         word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
         descriptor_vectors.append(word_vector)
 
+    # get 8 descriptors
+    input_vectors_listed = [a.tolist() for a in descriptor_vectors]
+    input_vectors_listed = [a[0] for a in input_vectors_listed]
+    kmeans = KMeans(n_clusters=8, random_state=0).fit(input_vectors_listed)
 
-    data = {}
-    print(type(descriptor_list), type(descriptor_vectors))
-    data["descriptor_list"] = descriptor_list
-    vectors_list = []
-    for i in range(len(descriptor_vectors)):
-        vectors_list.append(descriptor_vectors[i].tolist())
-    # print(descriptor_vectors)
-    data["descriptor_vectors"] = vectors_list
+    closest, _ = pairwise_distances_argmin_min(
+        kmeans.cluster_centers_, input_vectors_listed)
+    sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
+    # split 8 descriptors into 2 sets of 4
+    shuffle(sampled_descriptors)
+    q1 = sampled_descriptors[:4]
+    q2 = sampled_descriptors[4:]
 
   # descriptors_8 = []
 #   descriptors_8 = ['depth', 'green', 'round', 'plump', 'fresh', 'bright', 'light_bodied', 'rich']

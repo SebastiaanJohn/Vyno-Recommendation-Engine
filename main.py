@@ -2,47 +2,57 @@
 Module Docstring
 """
 
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import pairwise_distances_argmin_min
+from sklearn.cluster import KMeans
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from nltk.tokenize import word_tokenize, sent_tokenize
+from gensim.models.phrases import Phrases, Phraser
+from gensim.models import Word2Vec
+import numpy as np
+import pandas as pd
+from random import shuffle
+import itertools
+import string
+import pickle
+import argparse
+
+np.random.seed(42)
+
 __author__ = "Team Baard"
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __license__ = "MIT"
 
-import argparse
-import os
-import requests
-import shutil
-import pickle
-import string
-import itertools
 
-import pandas as pd
-import numpy as np
-
-from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases, Phraser
-
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import SnowballStemmer
-from nltk.corpus import stopwords
-
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
-from sklearn.metrics.pairwise import cosine_similarity
-
-
-def load_tf_idf_weights(pkl='models/vectorizer.pickle'):
+def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
+    """Return TF-IDF weights dictionary using saved pickle file."""
     tf_idf = pickle.load(open(pkl, "rb"))
     return dict(zip(tf_idf.get_feature_names(), tf_idf.idf_))
 
 
 def load_ngrams(ngram='models/ngrams'):
+    """Return N-gram language model."""
     return Phrases.load(ngram)
 
 
 def load_descriptor_map(dmap='models/descriptor_mapping.csv'):
+    """Return disciptor map as Pandas dataframe."""
     return pd.read_csv(dmap).set_index('raw descriptor')
 
 
 def preprocess_description(description, ngram, descriptor_map, level=3):
+    """
+    Tokenizes text, created n-grams and maps words in wine
+    description to descriptor map.
+
+    Keyword arguments:
+    description -- the wine description (str)
+    ngram -- pretrained n-gram model
+    descriptor_map -- descriptor map (dataframe)
+
+    returns: preprocessed descriptor from wine description
+    """
     tokens = tokenize_description(description)
     phrase = ngram[tokens]
     descriptors = [map_descriptor(word, descriptor_map, level)
@@ -54,6 +64,7 @@ def preprocess_description(description, ngram, descriptor_map, level=3):
 
 
 def tokenize_description(description):
+    """Tokenizes, stems, and removes punctuation from wine description"""
     stop_words = set(stopwords.words('english'))
     punctuation_table = str.maketrans(
         {key: None for key in string.punctuation})
@@ -72,19 +83,46 @@ def tokenize_description(description):
 
 
 def map_descriptor(word, mapping, level=3):
+    """Maps word in wine description to descriptor mapping"""
     if word in list(mapping.index):
         return mapping[f'level_{level}'][word]
+
+
+def get_wine_vector(descriptors, tf_idf, embeddings):
+    """
+    Creates wine vector from wine description.
+
+    Keyword arguments:
+    descriptors -- list of wine descriptors (list)
+    tf_idf -- pretrained TF-IDF model (dict)
+    embeddings -- Word2Vec embeddings
+
+    returns: weighted wine vector
+    """
+    wine_vector = []
+    for term in descriptors:
+        if term in tf_idf.keys():
+            tfidf_weighting = tf_idf[term]
+            word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
+            weighted_vector = tfidf_weighting * word_vector
+            wine_vector.append(weighted_vector)
+        else:
+            continue
+
+    return sum(wine_vector) / len(wine_vector)
 
 
 def main(args):
     # TEST CODE START
     df = pd.read_csv(
-        'data/processed/wine_dataset_all.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
+        'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
     wine_descriptions = df.sample(12)
     # TEST CODE END
 
+    wine_descriptions.to_csv('josephbarneswines_test.csv')
+
     # load models
-    embeddings = Word2Vec.load('models/wine_word2vec_model.bin')
+    embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
     ngrams = load_ngrams()
     descriptor_map = load_descriptor_map()
@@ -97,10 +135,21 @@ def main(args):
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
+    print('All descriptors:', descriptor_list, '\n')
+
+    # remove descriptors that are not easy to understand
+    easy_descriptors = pd.read_csv(
+        'models/user_descriptors.csv')['descriptors'].tolist()
+    easy_descriptors_list = []
+    for descriptor in descriptor_list:
+        if descriptor in easy_descriptors:
+            easy_descriptors_list.append(descriptor)
+
+    print('All user descriptors:', easy_descriptors_list, '\n')
 
     # get embeddings from descriptors
     descriptor_vectors = []
-    for term in set(descriptor_list):
+    for term in set(easy_descriptors_list):
         word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
         descriptor_vectors.append(word_vector)
 
@@ -111,20 +160,30 @@ def main(args):
 
     closest, _ = pairwise_distances_argmin_min(
         kmeans.cluster_centers_, input_vectors_listed)
-    sampled_descriptors = list(np.array(descriptor_list)[closest])
+    sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
-    # users picks 2 descriptors
+    # split 8 descriptors into 2 sets of 4
+    shuffle(sampled_descriptors)
+    q1 = sampled_descriptors[:4]
+    q2 = sampled_descriptors[4:]
+
+    # user picks 2 descriptors
     choices = []
-    i = 0
-    while i != 2:
-        print('The wine descriptors are: ', sampled_descriptors)
+    while True:
+        print('The wine descriptors are: ', q1)
         choice = input('Please choose first descriptor from list: ')
-        if choice in sampled_descriptors:
-            key = sampled_descriptors.index(choice)
-            choices.append(sampled_descriptors.pop(key))
-            i += 1
-        else:
-            print('Please choose a descriptor from the list.')
+        if choice in q1:
+            choices.append(choice)
+            break
+
+    print('\n')
+
+    while True:
+        print('The wine descriptors are: ', q2)
+        choice = input('Please choose second descriptor from list: ')
+        if choice in q2:
+            choices.append(choice)
+            break
 
     # create user wine vector
     user_vector = get_wine_vector(choices, tfidf_weightings, embeddings)
@@ -141,22 +200,13 @@ def main(args):
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    print('Based on your preference we recommend these wines:')
-    for idx, wine in enumerate(wine_descriptions['wine_name']):
+    print('\n')
+
+    print('Based on your preference we recommend these wines: \n')
+    for idx, wine in enumerate(wine_descriptions['title']):
         print(f'{idx + 1}: {wine} \n')
 
     return wine_descriptions
-
-
-def get_wine_vector(descriptors, tf_idf, embeddings):
-    wine_vector = []
-    for term in descriptors:
-        tfidf_weighting = tf_idf[term]
-        word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
-        weighted_vector = tfidf_weighting * word_vector
-        wine_vector.append(weighted_vector)
-
-    return sum(wine_vector) / len(wine_vector)
 
 
 if __name__ == "__main__":
