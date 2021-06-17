@@ -27,20 +27,34 @@ from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def load_tf_idf_weights(pkl='models/vectorizer.pickle'):
+def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
+    """Return TF-IDF weights dictionary using saved pickle file."""
     tf_idf = pickle.load(open(pkl, "rb"))
     return dict(zip(tf_idf.get_feature_names(), tf_idf.idf_))
 
 
 def load_ngrams(ngram='models/ngrams'):
+    """Return N-gram language model."""
     return Phrases.load(ngram)
 
 
 def load_descriptor_map(dmap='models/descriptor_mapping.csv'):
+    """Return disciptor map as Pandas dataframe."""
     return pd.read_csv(dmap).set_index('raw descriptor')
 
 
 def preprocess_description(description, ngram, descriptor_map, level=3):
+    """
+    Tokenizes text, created n-grams and maps words in wine
+    description to descriptor map.
+
+    Keyword arguments:
+    description -- the wine description (str)
+    ngram -- pretrained n-gram model
+    descriptor_map -- descriptor map (dataframe)
+
+    returns: preprocessed descriptor from wine description
+    """
     tokens = tokenize_description(description)
     phrase = ngram[tokens]
     descriptors = [map_descriptor(word, descriptor_map, level)
@@ -52,6 +66,7 @@ def preprocess_description(description, ngram, descriptor_map, level=3):
 
 
 def tokenize_description(description):
+    """Tokenizes, stems, and removes punctuation from wine description"""
     stop_words = set(stopwords.words('english'))
     punctuation_table = str.maketrans(
         {key: None for key in string.punctuation})
@@ -70,8 +85,30 @@ def tokenize_description(description):
 
 
 def map_descriptor(word, mapping, level=3):
+    """Maps word in wine description to descriptor mapping"""
     if word in list(mapping.index):
         return mapping[f'level_{level}'][word]
+
+
+def get_wine_vector(descriptors, tf_idf, embeddings):
+    """
+    Creates wine vector from wine description.
+
+    Keyword arguments:
+    descriptors -- list of wine descriptors (list)
+    tf_idf -- pretrained TF-IDF model (dict)
+    embeddings -- Word2Vec embeddings
+
+    returns: weighted wine vector
+    """
+    wine_vector = []
+    for term in descriptors:
+        tfidf_weighting = tf_idf[term]
+        word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
+        weighted_vector = tfidf_weighting * word_vector
+        wine_vector.append(weighted_vector)
+
+    return sum(wine_vector) / len(wine_vector)
 
 
 def main(args):
@@ -82,7 +119,7 @@ def main(args):
     # TEST CODE END
 
     # load models
-    embeddings = Word2Vec.load('models/wine_word2vec_model.bin')
+    embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
     ngrams = load_ngrams()
     descriptor_map = load_descriptor_map()
@@ -160,17 +197,6 @@ def main(args):
         print(f'{idx + 1}: {wine} \n')
 
     return wine_descriptions
-
-
-def get_wine_vector(descriptors, tf_idf, embeddings):
-    wine_vector = []
-    for term in descriptors:
-        tfidf_weighting = tf_idf[term]
-        word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
-        weighted_vector = tfidf_weighting * word_vector
-        wine_vector.append(weighted_vector)
-
-    return sum(wine_vector) / len(wine_vector)
 
 
 if __name__ == "__main__":
