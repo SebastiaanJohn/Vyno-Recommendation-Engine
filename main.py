@@ -101,10 +101,13 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
     """
     wine_vector = []
     for term in descriptors:
-        tfidf_weighting = tf_idf[term]
-        word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
-        weighted_vector = tfidf_weighting * word_vector
-        wine_vector.append(weighted_vector)
+        if term in tf_idf.keys():
+            tfidf_weighting = tf_idf[term]
+            word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
+            weighted_vector = tfidf_weighting * word_vector
+            wine_vector.append(weighted_vector)
+        else:
+            continue
 
     return sum(wine_vector) / len(wine_vector)
 
@@ -112,9 +115,11 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 def main(args):
     # TEST CODE START
     df = pd.read_csv(
-        'data/processed/wine_dataset_all.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
+        'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
     wine_descriptions = df.sample(12)
     # TEST CODE END
+
+    wine_descriptions.to_csv('josephbarneswines_test.csv')
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -126,13 +131,11 @@ def main(args):
     wine_descriptions['normalized_descriptors'] = wine_descriptions['description'].apply(
         lambda x: preprocess_description(x, ngrams, descriptor_map, level=3))
 
-    wine_descriptions.to_csv('test2.csv')
-
     # remove duplicates
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
-    print(descriptor_list)
+    print('All descriptors:', descriptor_list, '\n')
 
     # remove descriptors that are not easy to understand
     easy_descriptors = pd.read_csv(
@@ -142,7 +145,7 @@ def main(args):
         if descriptor in easy_descriptors:
             easy_descriptors_list.append(descriptor)
 
-    print(easy_descriptors_list)
+    print('All user descriptors:', easy_descriptors_list, '\n')
 
     # get embeddings from descriptors
     descriptor_vectors = []
@@ -173,9 +176,11 @@ def main(args):
             choices.append(choice)
             break
 
+    print('\n')
+
     while True:
         print('The wine descriptors are: ', q2)
-        choice = input('Please choose first descriptor from list: ')
+        choice = input('Please choose second descriptor from list: ')
         if choice in q2:
             choices.append(choice)
             break
@@ -195,8 +200,10 @@ def main(args):
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    print('Based on your preference we recommend these wines:')
-    for idx, wine in enumerate(wine_descriptions['wine_name']):
+    print('\n')
+
+    print('Based on your preference we recommend these wines: \n')
+    for idx, wine in enumerate(wine_descriptions['title']):
         print(f'{idx + 1}: {wine} \n')
 
     return wine_descriptions
