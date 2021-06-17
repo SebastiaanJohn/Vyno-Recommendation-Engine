@@ -84,6 +84,6 @@ target/
 
 # Mypy cache
 .mypy_cache/
-
+vyno1/
 # custom
 data/raw
