@@ -2,29 +2,27 @@
 Module Docstring
 """
 
-__author__ = "Team Baard"
-__version__ = "0.1.0"
-__license__ = "MIT"
-
-import argparse
-import pickle
-import string
-import itertools
-from random import shuffle
-
-import pandas as pd
-import numpy as np
-
-from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases, Phraser
-
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import SnowballStemmer
-from nltk.corpus import stopwords
-
-from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import pairwise_distances_argmin_min
+from sklearn.cluster import KMeans
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from nltk.tokenize import word_tokenize, sent_tokenize
+from gensim.models.phrases import Phrases, Phraser
+from gensim.models import Word2Vec
+import numpy as np
+import pandas as pd
+from random import shuffle
+import itertools
+import string
+import pickle
+import argparse
+
+np.random.seed(42)
+
+__author__ = "Team Baard"
+__version__ = "1.0.0"
+__license__ = "MIT"
 
 
 def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
@@ -128,18 +126,23 @@ def main(args):
     wine_descriptions['normalized_descriptors'] = wine_descriptions['description'].apply(
         lambda x: preprocess_description(x, ngrams, descriptor_map, level=3))
 
+    wine_descriptions.to_csv('test2.csv')
+
     # remove duplicates
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
+    print(descriptor_list)
 
     # remove descriptors that are not easy to understand
     easy_descriptors = pd.read_csv(
-        'models/easy_descriptors.csv')['descriptors'].tolist()
+        'models/user_descriptors.csv')['descriptors'].tolist()
     easy_descriptors_list = []
     for descriptor in descriptor_list:
         if descriptor in easy_descriptors:
             easy_descriptors_list.append(descriptor)
+
+    print(easy_descriptors_list)
 
     # get embeddings from descriptors
     descriptor_vectors = []
