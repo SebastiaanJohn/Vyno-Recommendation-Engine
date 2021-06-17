@@ -7,12 +7,10 @@ __version__ = "0.1.0"
 __license__ = "MIT"
 
 import argparse
-import os
-import requests
-import shutil
 import pickle
 import string
 import itertools
+from random import shuffle
 
 import pandas as pd
 import numpy as np
@@ -98,9 +96,17 @@ def main(args):
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
 
+    # remove descriptors that are not easy to understand
+    easy_descriptors = pd.read_csv(
+        'models/easy_descriptors.csv')['descriptors'].tolist()
+    easy_descriptors_list = []
+    for descriptor in descriptor_list:
+        if descriptor in easy_descriptors:
+            easy_descriptors_list.append(descriptor)
+
     # get embeddings from descriptors
     descriptor_vectors = []
-    for term in set(descriptor_list):
+    for term in set(easy_descriptors_list):
         word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
         descriptor_vectors.append(word_vector)
 
@@ -111,20 +117,28 @@ def main(args):
 
     closest, _ = pairwise_distances_argmin_min(
         kmeans.cluster_centers_, input_vectors_listed)
-    sampled_descriptors = list(np.array(descriptor_list)[closest])
+    sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
-    # users picks 2 descriptors
+    # split 8 descriptors into 2 sets of 4
+    shuffle(sampled_descriptors)
+    q1 = sampled_descriptors[:4]
+    q2 = sampled_descriptors[4:]
+
+    # user picks 2 descriptors
     choices = []
-    i = 0
-    while i != 2:
-        print('The wine descriptors are: ', sampled_descriptors)
+    while True:
+        print('The wine descriptors are: ', q1)
         choice = input('Please choose first descriptor from list: ')
-        if choice in sampled_descriptors:
-            key = sampled_descriptors.index(choice)
-            choices.append(sampled_descriptors.pop(key))
-            i += 1
-        else:
-            print('Please choose a descriptor from the list.')
+        if choice in q1:
+            choices.append(choice)
+            break
+
+    while True:
+        print('The wine descriptors are: ', q2)
+        choice = input('Please choose first descriptor from list: ')
+        if choice in q2:
+            choices.append(choice)
+            break
 
     # create user wine vector
     user_vector = get_wine_vector(choices, tfidf_weightings, embeddings)
