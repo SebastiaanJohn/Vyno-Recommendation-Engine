@@ -80,7 +80,7 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
     return sum(wine_vector) / len(wine_vector)
 
 df = pd.read_csv(
-    'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
+    'josephbarneswines_test.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
 
 wine_descriptions = df.sample(12)
 
@@ -96,10 +96,10 @@ def get_descriptors():
 
     # TEST CODE END
 
-    wine_descriptions.to_csv('josephbarneswines_test.csv')
+    # wine_descriptions.to_csv('josephbarneswines_test.csv')
 
     # load models
-    embeddings = Word2Vec.load('models/word2vec_model.bin')
+    embeddings = Word2Vec.load('models/wine_word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
     ngrams = load_ngrams()
     descriptor_map = load_descriptor_map()
@@ -144,6 +144,9 @@ def get_descriptors():
     q1 = sampled_descriptors[:4]
     q2 = sampled_descriptors[4:]
 
+    data = {}
+    data['descriptors'] = sampled_descriptors
+
   # descriptors_8 = []
 #   descriptors_8 = ['depth', 'green', 'round', 'plump', 'fresh', 'bright', 'light_bodied', 'rich']
   
@@ -159,22 +162,10 @@ def get_wines():
     data = request.get_json()
     descriptor_vectors = data['descriptor_vectors']
     descriptor_list = data['descriptor_list']
-
-    input_vectors_listed = [a.tolist() for a in descriptor_vectors]
-    input_vectors_listed = [a[0] for a in input_vectors_listed]
-    kmeans = KMeans(n_clusters=8, random_state=0).fit(input_vectors_listed)
-
-    closest, _ = pairwise_distances_argmin_min(
-        kmeans.cluster_centers_, input_vectors_listed)
-    sampled_descriptors = list(np.array(descriptor_list)[closest])
-
-    # users picks 2 descriptors
     choices = data['choices']
-
-
-    # create user wine vector
+    
+    embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
-    embeddings = Word2Vec.load('models/wine_word2vec_model.bin')
 
     user_vector = get_wine_vector(choices, tfidf_weightings, embeddings)
 
@@ -190,8 +181,10 @@ def get_wines():
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    print('Based on your preference we recommend these wines:')
-    for idx, wine in enumerate(wine_descriptions['wine_name']):
+    print('\n')
+
+    print('Based on your preference we recommend these wines: \n')
+    for idx, wine in enumerate(wine_descriptions['title']):
         print(f'{idx + 1}: {wine} \n')
 
     return jsonify(wine_descriptions)
