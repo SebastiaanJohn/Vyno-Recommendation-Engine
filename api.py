@@ -95,13 +95,8 @@ app = Flask(__name__)
 def get_descriptors():
     # get 12 wines as input   
     data = request.get_json()
-    # descriptions = data['descriptions']
-    # print(descriptions)
 
     # TEST CODE END
-
-    # wine_descriptions.to_csv('josephbarneswines_test.csv')
-
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
@@ -116,7 +111,6 @@ def get_descriptors():
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
-    print('All descriptors:', descriptor_list, '\n')
 
     # remove descriptors that are not easy to understand
     easy_descriptors = pd.read_csv(
@@ -126,7 +120,6 @@ def get_descriptors():
         if descriptor in easy_descriptors:
             easy_descriptors_list.append(descriptor)
 
-    print('All user descriptors:', easy_descriptors_list, '\n')
 
     # get embeddings from descriptors
     descriptor_vectors = []
@@ -152,11 +145,6 @@ def get_descriptors():
     data['descriptors'] = sampled_descriptors
     a = wine_descriptions.to_dict(orient = 'index')
     data['json_frame'] = a
-  # descriptors_8 = []
-#   descriptors_8 = ['depth', 'green', 'round', 'plump', 'fresh', 'bright', 'light_bodied', 'rich']
-  
-#   output = {}
-#   output['descriptors_8'] = descriptors_8
 
     return jsonify(data)
 
@@ -167,14 +155,7 @@ def get_wines():
     a = data["json_frame"]
     # a_json = json.loads(a)
     wine_descriptions = pd.DataFrame.from_dict(a, orient="index")
-    # print(wine_descriptions["normalized_descriptors"])
-
-    # wine_descriptions = pd.read_csv(
-    # 'josephbarneswines_test.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
-
-    # print(wine_descriptions)
-    # descriptor_vectors = data['descriptor_vectors']
-    # descriptor_list = data['descriptor_list']
+    
     choices = data['descriptors']
     
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -194,20 +175,13 @@ def get_wines():
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    print('\n')
 
-    print('Based on your preference we recommend these wines: \n')
-    for idx, wine in enumerate(wine_descriptions['title']):
-        print(f'{idx + 1}: {wine} \n')
 
     data = {}
     print(wine_descriptions['title'])
     a = wine_descriptions['title'].to_dict()
-    data['wine_descriptions'] = a
+    data['wine_descriptions'] = a                                                      
     return jsonify(data)
 
-# input is 2 words 
-# do some process 
-# output is 6 wines 
 if __name__ == '__main__':
     app.run(debug=True, port="8000")

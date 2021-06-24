@@ -17,6 +17,7 @@ import itertools
 import string
 import pickle
 import argparse
+import random
 
 np.random.seed(42)
 
@@ -111,20 +112,35 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
     return sum(wine_vector) / len(wine_vector)
 
+# ['lemon_blossom', 'lime', 'blackcurrant', 'apple']
+
+# All user descriptors: ['passion_fruit', 'lemon_blossom', 'oak', 'nectarine', 'wood', 'apple', 'vanilla', 'citrus', 'peach', 'lime', 'pear', 'tangerine', 'spice', 'melon', 'blackcurrant'] 
+# 1: Celler del Roure, Cullerot, DO Valencia, Spain 
+
+# 2: Stella Bella, Suckfizzle Sauvignon Blanc, Semillon, Margaret River, Australia 
+
+# 3: Paul Hobbs, Crossbarn Chardonnay, Sonoma Coast, California, USA 
+
+# 4: Domaine Klur, Katz, Pinot Gris, Alsace, France 
+
+# 5: ILatium Morini, Soave, DOC, Veneto, Italy 
+
+# 6: Iona, Elgin Highlands Wild Ferment Sauvignon Blanc, Elgin, South Africa 
+# ['vanilla', 'citrus', 'passion_fruit', 'melon']
+# ['peach', 'tangerine', 'lemon_blossom', 'apple']
 
 def main(args):
     # TEST CODE START
     # df = pd.read_csv(
-    #     'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
-    # wine_descriptions = df.sample(12)
-    df = pd.read_csv(
-        'darley_merchant_wines.csv', dtype=str).dropna(subset=["DESCRIPTION"]).drop_duplicates(subset=['DESCRIPTION'])
-    grouped = df.groupby(df.TYPE)
-    red_df = grouped.get_group('Red Wine')
-    wine_descriptions = red_df.sample(n = 12, random_state = np.random.RandomState())
+    #     'darley_merchant_wines.csv', dtype=str).dropna(subset=["DESCRIPTION"]).drop_duplicates(subset=['DESCRIPTION'])
+    # grouped = df.groupby(df.TYPE)
+    # white_df = grouped.get_group('White Wine')
+    # wine_descriptions = white_df.iloc
+    # wine_descriptions = white_df.sample(n = 12, random_state = np.random.RandomState())
     # TEST CODE END
 
-    wine_descriptions.to_csv('josephbarneswines_test.csv')
+    wine_descriptions = pd.read_csv('josephbarneswines_test.csv')
+    # wine_descriptions.to_csv('josephbarneswines_test.csv')
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -133,14 +149,19 @@ def main(args):
     descriptor_map = load_descriptor_map()
 
     # process descriptions
-    wine_descriptions['normalized_descriptors'] = wine_descriptions['description'].apply(
+    wine_descriptions['normalized_descriptors'] = wine_descriptions['DESCRIPTION'].apply(
         lambda x: preprocess_description(x, ngrams, descriptor_map, level=3))
 
     # remove duplicates
     descriptors = wine_descriptions['normalized_descriptors'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
-    print('All descriptors:', descriptor_list, '\n')
+    names = wine_descriptions['NAME'].tolist()
+    descriptions = wine_descriptions['DESCRIPTION'].tolist()
+    for i in range(len(names)):
+        print('Wine: ' + names[i])
+        # print('description: ' + descriptions[i])
+        # print('descriptors: ' + str(descriptors[i]) + '\n')
 
     # remove descriptors that are not easy to understand
     easy_descriptors = pd.read_csv(
@@ -168,7 +189,7 @@ def main(args):
     sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
     # split 8 descriptors into 2 sets of 4
-    shuffle(sampled_descriptors)
+    # shuffle(sampled_descriptors)
     q1 = sampled_descriptors[:4]
     q2 = sampled_descriptors[4:]
 
@@ -205,10 +226,15 @@ def main(args):
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
+    wine_csv = wine_descriptions.sort_values(
+        by=['cosine_similarity'], ascending=False)
+
+    wine_csv.to_csv(path_or_buf = 'example_output_white.csv')
+
     print('\n')
 
     print('Based on your preference we recommend these wines: \n')
-    for idx, wine in enumerate(wine_descriptions['title']):
+    for idx, wine in enumerate(wine_descriptions['NAME']):
         print(f'{idx + 1}: {wine} \n')
 
     return wine_descriptions
