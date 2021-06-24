@@ -108,22 +108,7 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
 
 def main(args):
-<<<<<<< HEAD
-    # TEST CODE START
-    # df = pd.read_csv(
-    #     'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
-    # wine_descriptions = df.sample(12)
-    df = pd.read_csv(
-        'darley_merchant_wines.csv', dtype=str).dropna(subset=["DESCRIPTION"]).drop_duplicates(subset=['DESCRIPTION'])
-    grouped = df.groupby(df.TYPE)
-    red_df = grouped.get_group('Red Wine')
-    wine_descriptions = red_df.sample(n = 12, random_state = np.random.RandomState())
-    # TEST CODE END
-
-    wine_descriptions.to_csv('josephbarneswines_test.csv')
-=======
-    wine_descriptions = args.df
->>>>>>> 9f227909e2c3f10363bb4b4d4b1351f4c0d62f76
+    wine_descriptions = pd.read_csv(args.df)
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -181,6 +166,8 @@ def main(args):
             key = q1.pop(q1.index(choice))
             choices.append(key)
             i += 1
+        else:
+            print('That descriptor is not in the list, please choose another one.')
 
     print('\n')
 
@@ -192,6 +179,8 @@ def main(args):
             key = q2.pop(q2.index(choice))
             choices.append(key)
             i += 1
+        else:
+            print('That descriptor is not in the list, please choose another one.')
 
     print('\n')
     print('User choose:', choices)
