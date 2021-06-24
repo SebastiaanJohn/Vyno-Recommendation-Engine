@@ -98,12 +98,9 @@ Running the project through the terminal helps look at the results for different
 	python3 main.py 'location/of/file.csv'
 ```
 The CSV must contain at least the following columns: 
-```
-| NAME          | DESCRIPTION	|
-| ------------- |:-------------:|
-| wine name     | wine description |
-
-```
+| NAME                                        | DESCRIPTION                                                                                                                                                                                                                     |
+|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Bella Modella, Primitivo, IGT Puglia, Italy | A very intense ruby red wine with garnet reflections, intense with hints of violet, black currant, plum jam and with light spicy notes. The taste is full and round thanks to the sweet tannins; it has hints of fruit compote. |
 
 <!-- LICENSE -->
 ## License
