@@ -114,12 +114,9 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
 def main(args):
     # TEST CODE START
-    df = pd.read_csv(
-        'data/raw/merchant_data/josephbarneswines.com.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
-    wine_descriptions = df.sample(12)
+    wine_descriptions = pd.read_csv(
+        'data/example_output_white.csv', dtype=str).dropna(subset=["DESCRIPTION"]).drop_duplicates(subset=['DESCRIPTION'])
     # TEST CODE END
-
-    wine_descriptions.to_csv('josephbarneswines_test.csv')
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -128,7 +125,7 @@ def main(args):
     descriptor_map = load_descriptor_map()
 
     # process descriptions
-    wine_descriptions['normalized_descriptors'] = wine_descriptions['description'].apply(
+    wine_descriptions['normalized_descriptors'] = wine_descriptions['DESCRIPTION'].apply(
         lambda x: preprocess_description(x, ngrams, descriptor_map, level=3))
 
     # remove duplicates
@@ -169,21 +166,28 @@ def main(args):
 
     # user picks 2 descriptors
     choices = []
-    while True:
+    i = 0
+    while i < 2:
         print('The wine descriptors are: ', q1)
-        choice = input('Please choose first descriptor from list: ')
+        choice = input('Please choose descriptor from list: ')
         if choice in q1:
-            choices.append(choice)
-            break
+            key = q1.pop(q1.index(choice))
+            choices.append(key)
+            i += 1
 
     print('\n')
 
-    while True:
+    i = 0
+    while i < 2:
         print('The wine descriptors are: ', q2)
-        choice = input('Please choose second descriptor from list: ')
+        choice = input('Please choose descriptor from list: ')
         if choice in q2:
-            choices.append(choice)
-            break
+            key = q2.pop(q2.index(choice))
+            choices.append(key)
+            i += 1
+
+    print('\n')
+    print('User choose:', choices)
 
     # create user wine vector
     user_vector = get_wine_vector(choices, tfidf_weightings, embeddings)
@@ -203,7 +207,7 @@ def main(args):
     print('\n')
 
     print('Based on your preference we recommend these wines: \n')
-    for idx, wine in enumerate(wine_descriptions['title']):
+    for idx, wine in enumerate(wine_descriptions['NAME']):
         print(f'{idx + 1}: {wine} \n')
 
     return wine_descriptions
