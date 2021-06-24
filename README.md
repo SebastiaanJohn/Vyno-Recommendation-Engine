@@ -45,9 +45,6 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 ```
 ├── LICENSE
 ├── README.md <- The top-level README for developers using this project.
-├── data
-│ ├── processed <- The final, canonical data sets for modeling.
-│ └── raw <- The original, immutable data dump.
 │
 ├── models <- Trained and serialized models, model predictions, or model summaries
 │
@@ -60,6 +57,7 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 ├── scripts <- Scripts used in this project
 │
 ├── main.py <- Run the model
+├── API.py <- Run API
 ```
 
 <!-- GETTING STARTED -->
