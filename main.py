@@ -108,7 +108,7 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
 
 def main(args):
-    wine_descriptions = args.df
+    wine_descriptions = pd.read_csv(args.df)
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -166,6 +166,8 @@ def main(args):
             key = q1.pop(q1.index(choice))
             choices.append(key)
             i += 1
+        else:
+            print('That descriptor is not in the list, please choose another one.')
 
     print('\n')
 
@@ -177,6 +179,8 @@ def main(args):
             key = q2.pop(q2.index(choice))
             choices.append(key)
             i += 1
+        else:
+            print('That descriptor is not in the list, please choose another one.')
 
     print('\n')
     print('User choose:', choices)
