@@ -5,6 +5,7 @@ __pycache__/
 # C extensions
 *.so
 vyno1/
+12_white.py
 
 # Distribution / packaging
 .Python
