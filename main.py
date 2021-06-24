@@ -1,5 +1,5 @@
 """
-Module Docstring
+Main running point of application.
 """
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -7,8 +7,8 @@ from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.cluster import KMeans
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
-from nltk.tokenize import word_tokenize, sent_tokenize
-from gensim.models.phrases import Phrases, Phraser
+from nltk.tokenize import word_tokenize
+from gensim.models.phrases import Phrases
 from gensim.models import Word2Vec
 import numpy as np
 import pandas as pd
@@ -18,11 +18,8 @@ import string
 import pickle
 import argparse
 
-np.random.seed(42)
-
 __author__ = "Team Baard"
 __version__ = "1.0.0"
-__license__ = "MIT"
 
 
 def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
@@ -106,17 +103,12 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
             word_vector = embeddings.wv.get_vector(term).reshape(1, 300)
             weighted_vector = tfidf_weighting * word_vector
             wine_vector.append(weighted_vector)
-        else:
-            continue
 
     return sum(wine_vector) / len(wine_vector)
 
 
 def main(args):
-    # TEST CODE START
-    wine_descriptions = pd.read_csv(
-        'data/example_output_white.csv', dtype=str).dropna(subset=["DESCRIPTION"]).drop_duplicates(subset=['DESCRIPTION'])
-    # TEST CODE END
+    wine_descriptions = args.df
 
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -125,11 +117,11 @@ def main(args):
     descriptor_map = load_descriptor_map()
 
     # process descriptions
-    wine_descriptions['normalized_descriptors'] = wine_descriptions['DESCRIPTION'].apply(
+    wine_descriptions['NORMALIZED_DESCRIPTION'] = wine_descriptions['DESCRIPTION'].apply(
         lambda x: preprocess_description(x, ngrams, descriptor_map, level=3))
 
     # remove duplicates
-    descriptors = wine_descriptions['normalized_descriptors'].tolist()
+    descriptors = wine_descriptions['NORMALIZED_DESCRIPTION'].tolist()
     descriptor_list_all = list(itertools.chain.from_iterable(descriptors))
     descriptor_list = list(set(descriptor_list_all))
     print('All descriptors:', descriptor_list, '\n')
@@ -193,16 +185,16 @@ def main(args):
     user_vector = get_wine_vector(choices, tfidf_weightings, embeddings)
 
     # vectorize wine descriptors
-    wine_descriptions['wine_vectors'] = wine_descriptions['normalized_descriptors'].apply(
+    wine_descriptions['WINE_VECTORS'] = wine_descriptions['NORMALIZED_DESCRIPTION'].apply(
         lambda x: get_wine_vector(x, tfidf_weightings, embeddings))
 
     # calculate cosine similarity between user and wines
-    wine_descriptions['cosine_similarity'] = wine_descriptions['wine_vectors'].apply(
+    wine_descriptions['COSINE_SIMILARITY'] = wine_descriptions['WINE_VECTORS'].apply(
         lambda x: cosine_similarity(user_vector, x))
 
     # take first 6 wines based on similarity
     wine_descriptions = wine_descriptions.sort_values(
-        by=['cosine_similarity'], ascending=False).head(6)
+        by=['COSINE_SIMILARITY'], ascending=False).head(6)
 
     print('\n')
 
@@ -218,21 +210,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Required positional argument
-    # parser.add_argument("arg", help="Required positional argument")
-
-    # Optional argument flag which defaults to False
-    parser.add_argument("-f", "--flag", action="store_true", default=False)
-
-    # Optional argument which requires a parameter (eg. -d test)
-    parser.add_argument("-n", "--name", action="store", dest="name")
-
-    # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Verbosity (-v, -vv, etc)")
+        "df", help="Required: path to CSV file containing wine desscriptions.")
 
     # Specify output of "--version"
     parser.add_argument(
