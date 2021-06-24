@@ -26,19 +26,33 @@ np.random.seed(42)
 
 
 def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
+    """Return TF-IDF weights dictionary using saved pickle file."""
     tf_idf = pickle.load(open(pkl, "rb"))
     return dict(zip(tf_idf.get_feature_names(), tf_idf.idf_))
 
 
 def load_ngrams(ngram='models/ngrams'):
+    """Return N-gram language model."""
     return Phrases.load(ngram)
 
 
 def load_descriptor_map(dmap='models/descriptor_mapping.csv'):
+    """Return disciptor map as Pandas dataframe."""
     return pd.read_csv(dmap).set_index('raw descriptor')
 
 
 def preprocess_description(description, ngram, descriptor_map, level=3):
+    """
+    Tokenizes text, created n-grams and maps words in wine
+    description to descriptor map.
+
+    Keyword arguments:
+    description -- the wine description (str)
+    ngram -- pretrained n-gram model
+    descriptor_map -- descriptor map (dataframe)
+
+    returns: preprocessed descriptor from wine description
+    """
     tokens = tokenize_description(description)
     phrase = ngram[tokens]
     descriptors = [map_descriptor(word, descriptor_map, level)
@@ -50,6 +64,7 @@ def preprocess_description(description, ngram, descriptor_map, level=3):
 
 
 def tokenize_description(description):
+    """Tokenizes, stems, and removes punctuation from wine description"""
     stop_words = set(stopwords.words('english'))
     punctuation_table = str.maketrans(
         {key: None for key in string.punctuation})
@@ -68,10 +83,21 @@ def tokenize_description(description):
 
 
 def map_descriptor(word, mapping, level=3):
+    """Maps word in wine description to descriptor mapping"""
     if word in list(mapping.index):
         return mapping[f'level_{level}'][word]
 
 def get_wine_vector(descriptors, tf_idf, embeddings):
+    """
+    Creates wine vector from wine description.
+
+    Keyword arguments:
+    descriptors -- list of wine descriptors (list)
+    tf_idf -- pretrained TF-IDF model (dict)
+    embeddings -- Word2Vec embeddings
+
+    returns: weighted wine vector
+    """
     wine_vector = []
     for term in descriptors:
         tfidf_weighting = tf_idf[term]
@@ -81,21 +107,27 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
     return sum(wine_vector) / len(wine_vector)
 
+# reading the csv file
 df = pd.read_csv(
     'josephbarneswines_test.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
 
-# print(len(df))
 wine_descriptions = df
-
-# print(len(wine_descriptions))
 
 app = Flask(__name__)
 
 @app.route('/12wines', methods=["GET", "POST"])
 def get_descriptors():
+    """
+    process the 12 wines, extract and cluster the descriptors 
+
+    Keyword arguments:
+    wine_descriptions -- dataframe converted to json object
+
+    returns: 8 most important descriptors
+    """
     # get 12 wines as input   
     data = request.get_json()
-
+    wine_descriptions = data['wine_descriptions']
     # TEST CODE END
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
@@ -136,13 +168,11 @@ def get_descriptors():
         kmeans.cluster_centers_, input_vectors_listed)
     sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
-    # split 8 descriptors into 2 sets of 4
-    shuffle(sampled_descriptors)
-    q1 = sampled_descriptors[:4]
-    q2 = sampled_descriptors[4:]
-
+    # make a dictionary of the data 
     data = {}
     data['descriptors'] = sampled_descriptors
+    
+    # convert title from dataframe to dictionary 
     a = wine_descriptions.to_dict(orient = 'index')
     data['json_frame'] = a
 
@@ -151,6 +181,16 @@ def get_descriptors():
 
 @app.route('/2words', methods=["GET", "POST"])
 def get_wines():
+    """
+    Based on the 2 chosen words 6 most closest wines will be recommended from the 12 wines 
+
+    Keyword arguments:
+    wine_descriptions -- dataframe converted to json object of the 12 wines
+    descriptors -- the 2 chosen descriptors
+
+    returns: 6 best wines based on the 2 chosen words 
+    """
+
     data = request.get_json()
     a = data["json_frame"]
     # a_json = json.loads(a)
@@ -175,12 +215,14 @@ def get_wines():
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-
-
+    # make a dictionary of the data 
     data = {}
     print(wine_descriptions['title'])
+
+    # convert title from dataframe to dictionary 
     a = wine_descriptions['title'].to_dict()
-    data['wine_descriptions'] = a                                                      
+    data['wine_descriptions'] = a
+
     return jsonify(data)
 
 if __name__ == '__main__':
