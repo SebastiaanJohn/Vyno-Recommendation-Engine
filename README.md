@@ -88,10 +88,8 @@ python3 main.py 'location/of/file.csv'
 
 The CSV must contain at least the following columns: NAME, DESCRIPTION. In addition, the column titles must be capitalized. See an example CSV below: 
 
-| NAME | DESCRIPTION |
-
+| NAME                                        | DESCRIPTION                                                                                                                                                                                                                     |
 |---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-
 | Bella Modella, Primitivo, IGT Puglia, Italy | A very intense ruby red wine with garnet reflections, intense with hints of violet, black currant, plum jam and with light spicy notes. The taste is full and round thanks to the sweet tannins; it has hints of fruit compote. |
 
 <!-- LICENSE -->
