@@ -51,13 +51,10 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 ├── models <- Trained and serialized models, model predictions, or model summaries
 │
 ├── notebooks <- Jupyter notebooks. Naming convention is a number (for ordering),
-│ the creator's initials, and a short `-` delimited description, e.g.
-│ `1.0-jqp-initial-data-exploration`.
 │
 ├── references <- Data dictionaries, manuals, and all other explanatory materials.
 │
 ├── requirements.txt <- The requirements file for reproducing the analysis environment, e.g.
-│ generated with `pip freeze > requirements.txt`
 │
 ├── scripts <- Scripts used in this project
 │
