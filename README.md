@@ -42,6 +42,7 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 *  [Flask](https://flask.palletsprojects.com/en/2.0.x/)
 *  [Gensim](https://radimrehurek.com/gensim/)
 ## Project Organization
+```
 ├── LICENSE
 ├── README.md <- The top-level README for developers using this project.
 ├── data
@@ -59,6 +60,8 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 ├── scripts <- Scripts used in this project
 │
 ├── main.py <- Run the model
+```
+
 <!-- GETTING STARTED -->
 ## Getting Started
 To get a local copy up and running follow these simple example steps.
