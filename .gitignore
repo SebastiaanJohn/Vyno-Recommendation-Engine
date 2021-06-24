@@ -6,6 +6,8 @@ __pycache__/
 *.so
 vyno1/
 12_white.py
+example_output_white.csv
+josephbarneswines_test.csv
 
 # Distribution / packaging
 .Python
