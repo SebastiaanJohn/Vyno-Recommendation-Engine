@@ -83,6 +83,13 @@ Running the project through the terminal helps look at the results for different
 ```bash
 python3 main.py 'location/of/file.csv'
 ```
+
+The CSV must contain at least the following columns: NAME, DESCRIPTION. In addition, the column titles must be capitalized. See an example CSV below: 
+
+| NAME                                        | DESCRIPTION                                                                                                                                                                                                                     |
+|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Bella Modella, Primitivo, IGT Puglia, Italy | A very intense ruby red wine with garnet reflections, intense with hints of violet, black currant, plum jam and with light spicy notes. The taste is full and round thanks to the sweet tannins; it has hints of fruit compote. |
+
 ### 2. API
 The API has two main calls, [/12wines, /2words], which can be interacted with by posting requests to the API. 
 
@@ -91,11 +98,6 @@ The call is made by calling domain.com/12wines with the request's body consistin
 
 | The call to /2words. 
 The call is made by calling domain.com/12wines with the body of the request consisting of the four chosen descriptors by the user and the data frame returned from the previous function. This function process the data frame and the four chosen descriptors then returns the six recommended wines based on the 12 wines originally from vyno and the two words chosen by the user.
-The CSV must contain at least the following columns: NAME, DESCRIPTION. In addition, the column titles must be capitalized. See an example CSV below: 
-
-| NAME                                        | DESCRIPTION                                                                                                                                                                                                                     |
-|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Bella Modella, Primitivo, IGT Puglia, Italy | A very intense ruby red wine with garnet reflections, intense with hints of violet, black currant, plum jam and with light spicy notes. The taste is full and round thanks to the sweet tannins; it has hints of fruit compote. |
 
 <!-- LICENSE -->
 ## License
