@@ -1,6 +1,6 @@
-scikit-learn
+scikit-learn==0.24.1
 nltk
-gensim
 numpy
 pandas
 flask
+gensim

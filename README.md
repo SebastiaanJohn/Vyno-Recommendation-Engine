@@ -62,7 +62,7 @@ Wine recommendation system build for [Vyno](https://www.vyno.ai).
 
 <!-- GETTING STARTED -->
 ## Getting Started
-To get a local copy up and running follow these simple example steps.
+To get a local copy up and running follow these simple example steps. Please make sure you are on Python 3.8.
 ### Installation
 1. Clone the repo.
 ```sh
@@ -70,7 +70,7 @@ git clone https://github.com/SebastiaanJohn/Vyno-Recommendation-Engine.git
 ```
 2. Use the package manager [pip](https://pip.pypa.io/en/stable/) to install packages required.
 ```sh
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -89,6 +89,8 @@ The CSV must contain at least the following columns: NAME, DESCRIPTION. In addit
 | NAME                                        | DESCRIPTION                                                                                                                                                                                                                     |
 |---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Bella Modella, Primitivo, IGT Puglia, Italy | A very intense ruby red wine with garnet reflections, intense with hints of violet, black currant, plum jam and with light spicy notes. The taste is full and round thanks to the sweet tannins; it has hints of fruit compote. |
+
+You can run an example using the wine_sample.csv file.
 
 ### 2. API
 The API has two main calls, [/12wines, /2words], which can be interacted with by posting requests to the API. 
