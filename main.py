@@ -1,5 +1,5 @@
 """
-Main running point of application.
+Run this file when you want to run the application through the terminal.
 """
 
 from sklearn.metrics.pairwise import cosine_similarity

@@ -1,28 +1,26 @@
+"""
+Run this file when you want to run the application through the API.
+"""
+
 from flask import *
 from flask import jsonify
-__author__ = "Team Baard"
-__version__ = "0.1.0"
-__license__ = "MIT"
-
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import pairwise_distances_argmin_min
 from sklearn.cluster import KMeans
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
-from nltk.tokenize import word_tokenize, sent_tokenize
-from gensim.models.phrases import Phrases, Phraser
+from nltk.tokenize import word_tokenize
+from gensim.models.phrases import Phrases
 from gensim.models import Word2Vec
 import numpy as np
 import pandas as pd
-from random import shuffle
 import itertools
 import string
 import pickle
-import argparse
-import base64
-import json
 
-np.random.seed(42)
+
+__author__ = "Team Baard"
+__version__ = "1.0.0"
 
 
 def load_tf_idf_weights(pkl='models/tfidf_vectorizer.pickle'):
@@ -87,6 +85,7 @@ def map_descriptor(word, mapping, level=3):
     if word in list(mapping.index):
         return mapping[f'level_{level}'][word]
 
+
 def get_wine_vector(descriptors, tf_idf, embeddings):
     """
     Creates wine vector from wine description.
@@ -107,13 +106,9 @@ def get_wine_vector(descriptors, tf_idf, embeddings):
 
     return sum(wine_vector) / len(wine_vector)
 
-# reading the csv file
-df = pd.read_csv(
-    'josephbarneswines_test.csv', dtype=str).dropna(subset=["description"]).drop_duplicates(subset=['description'])
-
-wine_descriptions = df
 
 app = Flask(__name__)
+
 
 @app.route('/12wines', methods=["GET", "POST"])
 def get_descriptors():
@@ -125,13 +120,13 @@ def get_descriptors():
 
     returns: 8 most important descriptors
     """
-    # get 12 wines as input   
+
+    # get 12 wines as input
     data = request.get_json()
     wine_descriptions = data['wine_descriptions']
-    # TEST CODE END
+
     # load models
     embeddings = Word2Vec.load('models/word2vec_model.bin')
-    tfidf_weightings = load_tf_idf_weights()
     ngrams = load_ngrams()
     descriptor_map = load_descriptor_map()
 
@@ -152,7 +147,6 @@ def get_descriptors():
         if descriptor in easy_descriptors:
             easy_descriptors_list.append(descriptor)
 
-
     # get embeddings from descriptors
     descriptor_vectors = []
     for term in set(easy_descriptors_list):
@@ -168,12 +162,12 @@ def get_descriptors():
         kmeans.cluster_centers_, input_vectors_listed)
     sampled_descriptors = list(np.array(easy_descriptors_list)[closest])
 
-    # make a dictionary of the data 
+    # make a dictionary of the data
     data = {}
     data['descriptors'] = sampled_descriptors
-    
-    # convert title from dataframe to dictionary 
-    a = wine_descriptions.to_dict(orient = 'index')
+
+    # convert title from dataframe to dictionary
+    a = wine_descriptions.to_dict(orient='index')
     data['json_frame'] = a
 
     return jsonify(data)
@@ -193,11 +187,10 @@ def get_wines():
 
     data = request.get_json()
     a = data["json_frame"]
-    # a_json = json.loads(a)
     wine_descriptions = pd.DataFrame.from_dict(a, orient="index")
-    
+
     choices = data['descriptors']
-    
+
     embeddings = Word2Vec.load('models/word2vec_model.bin')
     tfidf_weightings = load_tf_idf_weights()
 
@@ -215,15 +208,13 @@ def get_wines():
     wine_descriptions = wine_descriptions.sort_values(
         by=['cosine_similarity'], ascending=False).head(6)
 
-    # make a dictionary of the data 
+    # convert title from dataframe to dictionary
     data = {}
-    print(wine_descriptions['title'])
-
-    # convert title from dataframe to dictionary 
     a = wine_descriptions['title'].to_dict()
     data['wine_descriptions'] = a
 
     return jsonify(data)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port="8000")
